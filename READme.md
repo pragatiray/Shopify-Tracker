@@ -35,31 +35,49 @@ Shopify Theme (theme.liquid)
 
 ### Frontend (`engagement-tracker.js`)
 
-- Runs as an IIFE inside the browser — no build step, no dependencies.
-- Assigns each browser tab a `sessionId` (stored in `sessionStorage`).
-- Tracks three event types and stores them in `sessionStorage`:
 
-| Event | Trigger |
-|---|---|
-| `page_view` | On script load (every page navigation) |
-| `click` | Clicks on Add-to-Cart buttons and cart links |
-| `time_on_page` | Recorded on tab hide / page unload |
+- Zero-Dependency IIFE: Runs as a self-contained script inside the browser—no build step or external libraries required.
 
-- Flushes events to `/analyze` every **30 seconds** via `fetch` + `keepalive`.
-- On Add-to-Cart clicks, flushes **immediately**.
-- On tab close / navigation, flushes via **`navigator.sendBeacon`** for reliability.
-- Shows the modal **once per session** when the API returns `{ "trigger": true }`.
-- Never captures PII (passwords, card numbers, email fields are all guarded).
+- Session Management: Assigns each browser tab a unique sessionId (stored in sessionStorage) to maintain a consistent user "story."
+
+- Stateful Event Queue: Tracks three event types and stores them in a cumulative queue in sessionStorage:
+
+- page_view: Fired on script load (at every new page navigation).
+
+- click: Captured via delegated listeners, specifically targeting Add-to-Cart buttons and cart links.
+
+- time_on_page: Calculated and recorded periodically (every 30s) and upon page unload to track total engagement duration.
+
+Intelligent Flushing:
+
+- Periodic Sync: Flushes the full event history to /analyze every 30 seconds via fetch + keepalive.
+
+- High-Intent Trigger: Flushes immediately upon Add-to-Cart clicks to get real-time AI analysis.
+
+- Reliable Exit: On tab close or navigation, flushes via navigator.sendBeacon (or keepalive) to ensure the final engagement data reaches the server.
+
+- AI-Driven UI: Injects and shows the modal exactly once per session only when the API returns { "trigger": true }.
+
+- PII Guard: Actively ignores sensitive inputs. It uses an element-traversal check to ensure passwords, card numbers, and email fields are never captured or sent to the LLM.
 
 ### Backend (`index.js`)
 
-1. Validates `sessionId` and `events` array in the request body.
-2. Silently returns `{ trigger: false }` if:
-   - Total time on site is under **10 seconds**.
-   - The user is currently on a **checkout page**.
-3. Builds a structured session summary and sends it to Gemini with a CRO-specialist system prompt.
-4. Parses the Gemini JSON response and enforces a **15-word cap** on the message.
-5. Returns `{ trigger: boolean, message?: string }`.
+1.Validates sessionId (string) and events (non-empty array) in the request body.
+2.Silently returns { trigger: false } if:
+- Total time on site is under 60 seconds.
+- The user is currently on a checkout page.
+3.Builds a structured session summary (page views, clicks, cart actions, total time) and sends it to Gemini with a CRO-specialist system prompt.
+4. Enhances the payload with a derived signal:
+repeated_product_views (true if a product is viewed 3+ times).
+
+5. Calls Gemini with a timeout (~9 seconds) and expects a strict JSON response:
+{ "trigger": boolean, "message": "string" }
+6.Safely parses the response:
+- Handles malformed/non-JSON outputs
+- Falls back to { trigger: false } on failure
+7.Enforces a 15-word cap on the returned message.
+8.Returns:
+{ "trigger": boolean, "message"?: "string" }
 
 ---
 
@@ -130,6 +148,7 @@ Create a `.env` file:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL= your_gemini_model_here
 
 # Optional
 PORT=3000
@@ -215,6 +234,7 @@ var API_ENDPOINT = 'https://YOUR-SUBDOMAIN.ngrok-free.dev/analyze';
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `GEMINI_API_KEY` | Yes | — | Google Gemini API key |
+| `GEMINI_MODEL` | Yes | — | Google Gemini model |
 | `PORT` | No | `3000` | Port the Express server listens on |
 | `ALLOWED_ORIGINS` | No | `*` (dev) | Comma-separated list of allowed CORS origins |
 | `RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate limit rolling window in milliseconds |
@@ -228,7 +248,7 @@ var API_ENDPOINT = 'https://YOUR-SUBDOMAIN.ngrok-free.dev/analyze';
 
 The AI will **not** trigger a modal if:
 
-- The user has spent fewer than 60 seconds on the site (enforced in the prompt; backend pre-checks 10 seconds).
+- The user has spent fewer than 60 seconds on the site (enforced in the prompt; backend pre-checks 60 seconds).
 - The user is on a checkout page.
 - No meaningful engagement has occurred.
 
@@ -255,6 +275,10 @@ The modal message is capped at **15 words**.
 
 ## Known Limitations
 
-- The event queue is cleared after each flush. The backend evaluates each 30-second window in isolation rather than the full session — see [open bug](#) for the fix roadmap.
-- `sendBeacon` responses cannot be read by JavaScript, so a modal can never be triggered from a tab-close flush.
-- Shopify's Content Security Policy may need updating to allow `connect-src` to your backend domain.
+- Cumulative Payload Scaling: The event queue is preserved until a trigger occurs to provide the AI with full session context. For exceptionally long sessions, this results in larger JSON payloads which may increase latency during the flush cycle.
+
+- sendBeacon / keepalive Response Blindness: Background requests sent during page unloads (like visibilitychange) cannot have their responses read by JavaScript. Therefore, a modal can never be triggered from an exit-intent flush.
+
+- Shopify Content Security Policy (CSP): Tracking may be blocked by Shopify's security headers. Merchants must whitelist the backend domain in the connect-src directive of their CSP to allow the tracker to communicate with the API.
+
+- Session-Based Trigger Lock: To optimize for user experience and API quota, the system enforces a "one-modal-per-session" rule. Once a trigger is successful, all further tracking and AI analysis are suspended for that session.
