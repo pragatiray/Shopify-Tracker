@@ -282,3 +282,5 @@ The modal message is capped at **15 words**.
 - Shopify Content Security Policy (CSP): Tracking may be blocked by Shopify's security headers. Merchants must whitelist the backend domain in the connect-src directive of their CSP to allow the tracker to communicate with the API.
 
 - Session-Based Trigger Lock: To optimize for user experience and API quota, the system enforces a "one-modal-per-session" rule. Once a trigger is successful, all further tracking and AI analysis are suspended for that session.
+- <img width="1470" height="956" <img width="1470" height="956" alt="Screenshot 2026-04-08 at 14 51 01" src="https://github.com/user-attachments/assets/64d9b02e-56eb-4859-896d-afb3316c4415" />
+
