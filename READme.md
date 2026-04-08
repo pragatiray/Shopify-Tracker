@@ -284,6 +284,7 @@ The modal message is capped at **15 words**.
 - Session-Based Trigger Lock: To optimize for user experience and API quota, the system enforces a "one-modal-per-session" rule. Once a trigger is successful, all further tracking and AI analysis are suspended for that session.
 - <img width="1470" height="956" <img width="1470" height="956" alt="Screenshot 2026-04-08 at 14 51 01" src="https://github.com/user-attachments/assets/64d9b02e-56eb-4859-896d-afb3316c4415" />
 <img width="1470" height="956" alt="Screenshot 2026-04-08 at 13 42 24" src="https://github.com/user-atta<img width="1470" height="956" alt="Screenshot 2026-04-07 at 19 20 33" src="https://github.com/user-attachments/assets/93e90d14-ebcf-480f-96b2-1fe646b6b863" />
-chments/assets/b0a02396-<img width="1470" height="956" alt="Screenshot 2026-04-08 at 16 12 06" src="https://github.com/user-attachments/assets/fe585bf3-1dd5-453f-bca1-1931b1016c50" />
+chments/assets/b0a02396-<img width="1470" height="956" alt="Screenshot 2026-04-08 at 16 12 06" src="https<img width="1470" height="956" alt="Screenshot 2026-04-08 at 13 42 24" src="https://github.com/user-attachments/assets/9e12f6d4-6bf2-4cb3-9dcf-92c14705ad6b" />
+://github.com/user-attachments/assets/fe585bf3-1dd5-453f-bca1-1931b1016c50" />
 df66-4862-a88b-bcd47d728ae2" />
 
