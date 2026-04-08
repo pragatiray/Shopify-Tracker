@@ -1,7 +1,8 @@
 ; (function EngagementTracker() {
     'use strict';
-
-    var API_ENDPOINT = 'https://stephane-unapprehended-osteologically.ngrok-free.dev/analyze';
+    // --- CONFIGURATION ---
+    // Change this to your production backend or ngrok URL
+    var API_ENDPOINT = 'https://YOUR_BACKEND_URL.com/analyze';
     var FLUSH_INTERVAL = 30000;
     var SESSION_ID = (function () {
         var id = sessionStorage.getItem('_et_sid') || Math.random().toString(36).substring(2, 15);
